@@ -3405,10 +3405,19 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
         }
         
         var mediaActionButtonsFrame = CGRect(origin: CGPoint(x: textInputContainerBackgroundFrame.maxX + 6.0, y: textInputContainerBackgroundFrame.maxY - mediaActionButtonsSize.height), size: mediaActionButtonsSize)
-        if inputHasText || self.extendedSearchLayout || hasMediaDraft || interfaceState.interfaceState.forwardMessageIds != nil || hasSlowmodeButton || isEditingMedia {
+        var mediaActionButtonsScale: CGFloat = 1.0
+        if inputHasText || hasMediaDraft || interfaceState.interfaceState.forwardMessageIds != nil || isEditingMedia {
+            // While composing, the microphone collapses into the trailing end of the stretched field instead of
+            // sliding off screen: the glass container merges the shrinking circle with the capsule, so the field
+            // reads as absorbing the microphone while the send button pops out of the same spot.
+            mediaActionButtonsFrame.origin.x = textInputContainerBackgroundFrame.maxX - mediaActionButtonsSize.width - 2.0
+            mediaActionButtonsScale = 0.001
+        } else if self.extendedSearchLayout || hasSlowmodeButton {
             mediaActionButtonsFrame.origin.x = width + 8.0
         }
-        transition.updateFrame(node: self.mediaActionButtons, frame: mediaActionButtonsFrame)
+        transition.updatePosition(node: self.mediaActionButtons, position: mediaActionButtonsFrame.center)
+        transition.updateBounds(node: self.mediaActionButtons, bounds: CGRect(origin: CGPoint(), size: mediaActionButtonsFrame.size))
+        transition.updateTransformScale(node: self.mediaActionButtons, scale: mediaActionButtonsScale)
         if let (rect, containerSize) = self.absoluteRect {
             self.mediaActionButtons.updateAbsoluteRect(CGRect(x: rect.origin.x + mediaActionButtonsFrame.origin.x, y: rect.origin.y + mediaActionButtonsFrame.origin.y, width: mediaActionButtonsFrame.width, height: mediaActionButtonsFrame.height), within: containerSize, transition: transition)
         }
@@ -3456,7 +3465,7 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
         if inputHasText || hasMediaDraft || hasForward || isEditingMedia {
             sendActionsScale = 1.0
         } else {
-            sendActionsScale = 0.001
+            sendActionsScale = 0.4
             sendActionButtonsFrame.origin.x += (sendActionButtonsSize.width - 3.0 * 2.0) * 0.5 - 3.0
         }
         
