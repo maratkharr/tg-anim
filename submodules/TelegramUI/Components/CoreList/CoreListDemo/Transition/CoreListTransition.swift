@@ -35,6 +35,13 @@ public struct CoreListTransition: Equatable {
             case linear
             case custom(Float, Float, Float, Float)
             case bounce(stiffness: CGFloat, damping: CGFloat)
+            /// A real `CASpringAnimation` with explicit parameters, time-scaled so that it settles
+            /// within the pass duration — the same contract as
+            /// `ContainedViewLayoutTransitionCurve.customSpring` through `CALayer.makeAnimation`,
+            /// so a list scroll can run in lockstep with content animated by that curve (the chat's
+            /// send transition does exactly this). Only the damping ratio shapes the curve; the
+            /// duration is the speed.
+            case customSpring(mass: CGFloat, stiffness: CGFloat, damping: CGFloat, initialVelocity: CGFloat)
 
             /// UIKit's **scroll-to-top** curve — a critically damped spring, not a bezier.
             ///
@@ -420,7 +427,7 @@ public extension CoreListTransition {
             options = [.curveEaseIn]
         case .spring:
             options = UIView.AnimationOptions(rawValue: 7 << 16)
-        case .easeInOut, .custom, .bounce, .uiKitSmoothDeceleration:
+        case .easeInOut, .custom, .bounce, .customSpring, .uiKitSmoothDeceleration:
             // `.uiKitSmoothDeceleration` degrades here for the same reason `.custom` does: a
             // UIView block animation cannot take a spring's parameters without
             // `CALayerSpringParametersOverride`, which is private API CoreList cannot reach. Layer

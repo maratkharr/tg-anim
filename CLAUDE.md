@@ -386,6 +386,12 @@ Types: `Display/AnyEquatable.swift`, `Display/ListViewItemNeighbors.swift`,
 `ItemListUI/ItemListNeighborFacet.swift`,
 `ChatMessageItemCommon/{ChatHistoryItemNeighbors,ChatMessageMergeFingerprint}.swift`.
 
+## Message send transition (`ChatMessageTransitionNode`)
+
+The send animation (`submodules/TelegramUI/Sources/ChatMessageTransitionNode.swift`) is spring-driven: the vertical axis, the horizontal axis and the bubble scale (a text message squashes from 100% to `scaleDipScale` on one spring, then returns to 100% on another, as additive `transform.scale` phases paired with anchor-keeping position offsets) each run their own `ContainedViewLayoutTransitionCurve.customSpring`, tuned through the `SpringParameters` constants on `ChatMessageTransitionNodeImpl`. Springs are time-scaled by `CALayer.makeAnimation` to settle within the duration they run with, so only the damping ratio shapes a curve; `animationDuration` is the single knob for overall speed, and the text message's horizontal spring runs for `horizontalAnimationDuration` (half of it).
+
+**Invariant: the history list must scroll with the same vertical spring as the bubble.** The new bubble is animated *inside* its item node while `ListView` translates every item via `sublayerTransform`, so a mismatch shows as the bubble drifting relative to its neighbours. `ListViewAnimationCurve.CustomSpring` exists for this: `ChatControllerLoadDisplayNode` passes `ChatMessageTransitionNodeImpl.verticalListAnimationCurve` to `ListViewScrollToItem`, `listViewAnimationDurationAndCurve` maps `.customSpring` to it (not to the system `.Spring`), and `ListView` builds the scroll animation through `CALayer.makeAnimation` so it is configured exactly like the content springs. When animating `containerNode.layer` directly, pass `timingFunction: curve.timingFunction` as well as `mediaTimingFunction` — the latter is `nil` for springs and the default would silently fall back to ease-in-out.
+
 ## View frame ownership
 
 A view does not control its own `frame`. The parent (or a layout system) sets the frame; the view positions its own subviews against `self.bounds` in response.

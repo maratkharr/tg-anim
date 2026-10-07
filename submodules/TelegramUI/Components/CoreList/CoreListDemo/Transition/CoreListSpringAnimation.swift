@@ -37,6 +37,20 @@ func makeCoreList26SpringAnimation(_ keyPath: String, _ duration: Double) -> CAB
     return springAnimation
 }
 
+/// A spring with explicit parameters, built the way `CALayer.makeAnimation` builds a
+/// `kCAMediaTimingFunctionCustomSpringPrefix` animation (`CAAnimationUtils.swift:71`): the duration
+/// is the spring's own settling duration, and the emitter maps it onto the pass duration as `speed`.
+func makeCoreListCustomSpringAnimation(_ keyPath: String, mass: CGFloat, stiffness: CGFloat, damping: CGFloat, initialVelocity: CGFloat) -> CASpringAnimation {
+    let springAnimation = CASpringAnimation(keyPath: keyPath)
+    springAnimation.mass = mass
+    springAnimation.stiffness = stiffness
+    springAnimation.damping = damping
+    springAnimation.initialVelocity = initialVelocity
+    springAnimation.duration = springAnimation.settlingDuration
+    springAnimation.timingFunction = CAMediaTimingFunction(name: .linear)
+    return springAnimation
+}
+
 // MARK: - UIKit's smooth-deceleration scroll spring
 
 /// The spring `UIScrollView` uses for **scroll-to-top** (status-bar tap) and
@@ -187,6 +201,38 @@ private enum CoreListSpringSolver {
 
 private let system05Spring = makeCoreListSpringAnimation("", duration: 0.5) as? CASpringAnimation
 private let system26Spring = makeCoreList26SpringAnimation("", 0.3832) as? CASpringAnimation
+
+private struct CoreListCustomSpringKey: Hashable {
+    let mass: CGFloat
+    let stiffness: CGFloat
+    let damping: CGFloat
+    let initialVelocity: CGFloat
+}
+
+private let customSpringCacheLock = NSLock()
+private var customSpringCache: [CoreListCustomSpringKey: CASpringAnimation] = [:]
+
+/// Analytic value of a `.customSpring` curve at unit `phase` (0...1 maps onto the spring's settling
+/// duration, which is how the emitted animation is played), or nil when `_solveForInput:` is
+/// unavailable — the caller then falls back to the adjusted bezier, degraded together with nothing:
+/// the emitted spring stays real, so this is the one curve where the model may lag the screen.
+/// One solver animation is cached per parameter set; `solve` is sampled per frame.
+func coreListCustomSpringValue(mass: CGFloat, stiffness: CGFloat, damping: CGFloat, initialVelocity: CGFloat, phase: CGFloat) -> CGFloat? {
+    let key = CoreListCustomSpringKey(mass: mass, stiffness: stiffness, damping: damping, initialVelocity: initialVelocity)
+    customSpringCacheLock.lock()
+    let animation: CASpringAnimation
+    if let cached = customSpringCache[key] {
+        animation = cached
+    } else {
+        if customSpringCache.count >= 32 {
+            customSpringCache.removeAll()
+        }
+        animation = makeCoreListCustomSpringAnimation("", mass: mass, stiffness: stiffness, damping: damping, initialVelocity: initialVelocity)
+        customSpringCache[key] = animation
+    }
+    customSpringCacheLock.unlock()
+    return CoreListSpringSolver.solve(animation, min(max(phase, 0.0), 1.0))
+}
 
 /// Analytic value of a system spring at unit `phase`, or nil for `.adjustedBezier` (solved by
 /// `Curve.solve`) and on any OS where `_solveForInput:` has gone away — callers fall back to the

@@ -526,7 +526,14 @@ durations CoreList approximates. Note this is deliberately NOT what ComponentFlo
 returns (`listViewAnimationCurveSystem`, which samples the 0.5s spring), so ComponentFlow's analytic
 and emitted springs agree only at duration 0.5 — CoreList is analytic-first, so it follows the
 emitted curve. `.bounce` is not a unit curve (ComponentFlow's own `solve` asserts on it) and degrades
-to `.spring`.
+to `.spring`. `.customSpring(mass:stiffness:damping:initialVelocity:)` is the one parametrised
+spring that is real on both paths: the emitter installs a `CASpringAnimation` with those parameters
+played at `speed = settlingDuration / passDuration` (the contract of
+`ContainedViewLayoutTransitionCurve.customSpring` through `CALayer.makeAnimation`), and `solve`
+evaluates the same animation through `_solveForInput:` (falling back to the adjusted bezier only
+if that selector is gone). It exists so the chat's send transition can scroll the history with
+exactly the spring the new bubble is animated with: `ChatControllerLoadDisplayNode` passes
+`ListViewAnimationCurve.CustomSpring`, which `CoreListChatHistoryBackend` maps onto it.
 
 CoreList uses **no `CATransaction` at all**. Every layer it writes is UIView-backed — it creates no
 standalone `CALayer` — and a UIView's layer returns a null action by default outside an animation

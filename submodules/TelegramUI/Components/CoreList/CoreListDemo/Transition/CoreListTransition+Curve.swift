@@ -105,6 +105,14 @@ public extension CoreListTransition.Animation.Curve {
             assertionFailure("`.bounce` is not a unit curve; CoreList samples `.spring` instead")
             let (x1, y1, x2, y2) = coreListAdjustedSpring
             return coreListBezierPoint(x1, y1, x2, y2, x)
+        case let .customSpring(mass, stiffness, damping, initialVelocity):
+            // The same CASpringAnimation the emitter installs, evaluated over its settling
+            // duration — the unit phase of the pass, since the pass plays it at `speed`.
+            if let value = coreListCustomSpringValue(mass: mass, stiffness: stiffness, damping: damping, initialVelocity: initialVelocity, phase: x) {
+                return value
+            }
+            let (x1, y1, x2, y2) = coreListAdjustedSpring
+            return coreListBezierPoint(x1, y1, x2, y2, x)
         }
     }
 }

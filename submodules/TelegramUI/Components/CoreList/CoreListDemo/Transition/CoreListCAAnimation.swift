@@ -57,6 +57,12 @@ func makeCoreListAnimation(fromValue: Any?,
         // `speed`, the same way the two system springs are.
         animation = makeCoreListSmoothDecelerationAnimation(keyPath)
         isSystemSpring = true
+    } else if case let .customSpring(mass, stiffness, damping, initialVelocity) = curve {
+        // A real CASpringAnimation from the given parameters, exactly as `CAAnimationUtils` emits a
+        // `kCAMediaTimingFunctionCustomSpringPrefix` timing function: its natural settle is mapped
+        // onto the pass duration as `speed` below.
+        animation = makeCoreListCustomSpringAnimation(keyPath, mass: mass, stiffness: stiffness, damping: damping, initialVelocity: initialVelocity)
+        isSystemSpring = true
     } else if case .spring = curve {
         switch springKind {
         case .system26:
@@ -108,9 +114,10 @@ extension CoreListTransition.Animation.Curve {
             return CAMediaTimingFunction(name: .linear)
         case let .custom(a, b, c, d):
             return CAMediaTimingFunction(controlPoints: a, b, c, d)
-        case .spring, .bounce:
+        case .spring, .bounce, .customSpring:
             // Reached for `.spring`'s adjustedBezier branch, and for `.bounce`, which degrades to
-            // the same adjusted curve.
+            // the same adjusted curve. Unreachable for `.customSpring` from `makeCoreListAnimation`
+            // (that case emits a real CASpringAnimation before consulting this).
             return CAMediaTimingFunction(controlPoints: 0.380, 0.700, 0.125, 1.000)
         case .uiKitSmoothDeceleration:
             // Unreachable from `makeCoreListAnimation` (that case emits a real CASpringAnimation
