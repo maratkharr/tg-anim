@@ -5302,6 +5302,7 @@ Sorry for the inconvenience.";
 "PeerInfo.PaneFiles" = "Files";
 "PeerInfo.PaneLinks" = "Links";
 "PeerInfo.PaneVoiceAndVideo" = "Voice";
+"PeerInfo.PaneCircles" = "Circles";
 "PeerInfo.PaneAudio" = "Audio";
 "PeerInfo.PaneGroups" = "Groups";
 "PeerInfo.PaneMembers" = "Members";
@@ -5714,6 +5715,7 @@ Sorry for the inconvenience.";
 "ChatList.Search.FilterFiles" = "Files";
 "ChatList.Search.FilterMusic" = "Music";
 "ChatList.Search.FilterVoice" = "Voice";
+"ChatList.Search.FilterCircles" = "Circles";
 
 "ChatList.Search.NoResults" = "No Results";
 "ChatList.Search.NoResultsQueryDescription" = "There were no results for \"%@\".\nTry a new search.";
@@ -5724,7 +5726,8 @@ Sorry for the inconvenience.";
 "ChatList.Search.NoResultsFitlerLinks" = "Links from all your chats will be shown here.";
 "ChatList.Search.NoResultsFitlerFiles" = "Files from all your chats will be shown here.";
 "ChatList.Search.NoResultsFitlerMusic" = "Music from all your chats will be shown here.";
-"ChatList.Search.NoResultsFitlerVoice" = "Voice and video messages from all your chats will be shown here.";
+"ChatList.Search.NoResultsFitlerVoice" = "Voice messages from all your chats will be shown here.";
+"ChatList.Search.NoResultsFitlerCircles" = "Video messages from all your chats will be shown here.";
 
 "ChatList.Search.Messages_0" = "%@ messages";
 "ChatList.Search.Messages_1" = "%@ message";
@@ -7196,6 +7199,8 @@ Sorry for the inconvenience.";
 "SharedMedia.MusicCount_any" = "%@ music files";
 "SharedMedia.VoiceMessageCount_1" = "1 voice message";
 "SharedMedia.VoiceMessageCount_any" = "%@ voice messages";
+"SharedMedia.VideoMessageCount_1" = "1 video message";
+"SharedMedia.VideoMessageCount_any" = "%@ video messages";
 "SharedMedia.LinkCount_1" = "1 link";
 "SharedMedia.LinkCount_any" = "%@ links";
 

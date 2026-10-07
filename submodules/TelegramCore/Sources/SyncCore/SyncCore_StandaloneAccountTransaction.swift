@@ -17,7 +17,9 @@ public let telegramPostboxSeedConfiguration: SeedConfiguration = {
         upgradedMessageHoles[peerNamespace] = [
             Namespaces.Message.Cloud: Set([
                 MessageTags.gif,
-                MessageTags.pinned
+                MessageTags.pinned,
+                MessageTags.voice,
+                MessageTags.roundVideo
             ])
         ]
     }
@@ -45,7 +47,7 @@ public let telegramPostboxSeedConfiguration: SeedConfiguration = {
             return nil
         },
         existingMessageTags: MessageTags.all,
-        messageTagsWithSummary: [.unseenPersonalMessage, .pinned, .video, .photo, .gif, .music, .voiceOrInstantVideo, .webPage, .file, .unseenReaction, .unseenPollVote],
+        messageTagsWithSummary: [.unseenPersonalMessage, .pinned, .video, .photo, .gif, .music, .voiceOrInstantVideo, .voice, .roundVideo, .webPage, .file, .unseenReaction, .unseenPollVote],
         messageTagsWithThreadSummary: [.unseenPersonalMessage, .unseenReaction, .unseenPollVote],
         existingGlobalMessageTags: GlobalMessageTags.all,
         peerNamespacesRequiringMessageTextIndex: [Namespaces.Peer.SecretChat],

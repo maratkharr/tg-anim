@@ -261,7 +261,7 @@ extension PeerInfoScreenNode {
                 }
             })
         }, updateCanReadHistory: { _ in
-        }, sendSticker: nil), centralItemUpdated: { [weak self] messageId in
+        }, sendSticker: nil), playlistLocation: (self.paneContainerNode.currentPane?.node as? PeerInfoCirclesPaneNode)?.playlistLocation(forMessageId: id), centralItemUpdated: { [weak self] messageId in
             let _ = self?.paneContainerNode.requestExpandTabs?()
             self?.paneContainerNode.currentPane?.node.ensureMessageIsVisible(id: messageId)
         }))

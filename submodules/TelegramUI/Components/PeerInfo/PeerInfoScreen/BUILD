@@ -130,6 +130,7 @@ swift_library(
         "//submodules/TelegramUI/Components/Wallet/WalletSendScreen",
         "//submodules/TelegramUI/Components/MultiScaleTextNode",
         "//submodules/GridMessageSelectionNode",
+        "//submodules/TelegramUI/Components/CirclesGridNode",
         "//submodules/ChatMessageInteractiveMediaBadge",
         "//submodules/SoftwareVideo",
         "//submodules/TelegramUI/Components/Chat/ChatMessageSelectionInputPanelNode",

@@ -109,7 +109,7 @@ final class ItemNode: ASDisplayNode {
             title = presentationData.strings.ChatList_Search_FilterVoice
             icon = nil
         case .instantVideo:
-            title = presentationData.strings.ChatList_Search_FilterVoice
+            title = presentationData.strings.ChatList_Search_FilterCircles
             icon = nil
         case .publicPosts:
             title = presentationData.strings.ChatList_Search_FilterPublicPosts

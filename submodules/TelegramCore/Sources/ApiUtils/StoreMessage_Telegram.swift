@@ -57,7 +57,7 @@ public func tagsForStoreMessage(incoming: Bool, attributes: [MessageAttribute], 
                 switch attribute {
                     case let .Video(_, _, flags, _, _, _):
                         if flags.contains(.instantRoundVideo) {
-                            refinedTag = .voiceOrInstantVideo
+                            refinedTag = [.voiceOrInstantVideo, .roundVideo]
                         } else {
                             if !isSecret {
                                 refinedTag = [.photoOrVideo, .video]
@@ -67,10 +67,10 @@ public func tagsForStoreMessage(incoming: Bool, attributes: [MessageAttribute], 
                         }
                     case let .Audio(isVoice, _, _, _, _):
                         if isVoice {
-                            refinedTag = .voiceOrInstantVideo
+                            refinedTag = [.voiceOrInstantVideo, .voice]
                         } else {
                             if file.isInstantVideo {
-                                refinedTag = .voiceOrInstantVideo
+                                refinedTag = [.voiceOrInstantVideo, .roundVideo]
                             } else {
                                 refinedTag = .music
                             }
@@ -151,7 +151,7 @@ public func tagsForStoreMessage(incoming: Bool, attributes: [MessageAttribute], 
                     switch attribute {
                         case let .Video(_, _, flags, _, _, _):
                             if flags.contains(.instantRoundVideo) {
-                                refinedTag = .voiceOrInstantVideo
+                                refinedTag = [.voiceOrInstantVideo, .roundVideo]
                             } else {
                                 if !isSecret {
                                     refinedTag = [.photoOrVideo, .video]
@@ -161,10 +161,10 @@ public func tagsForStoreMessage(incoming: Bool, attributes: [MessageAttribute], 
                             }
                         case let .Audio(isVoice, _, _, _, _):
                             if isVoice {
-                                refinedTag = .voiceOrInstantVideo
+                                refinedTag = [.voiceOrInstantVideo, .voice]
                             } else {
                                 if file.isInstantVideo {
-                                    refinedTag = .voiceOrInstantVideo
+                                    refinedTag = [.voiceOrInstantVideo, .roundVideo]
                                 } else {
                                     refinedTag = .music
                                 }

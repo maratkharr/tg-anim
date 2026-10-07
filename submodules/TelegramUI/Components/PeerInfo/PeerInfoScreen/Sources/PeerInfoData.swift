@@ -614,15 +614,24 @@ private func peerInfoAvailableMediaPanes(context: AccountContext, peerId: PeerId
     var tags: [(MessageTags, PeerInfoPaneKey)] = []
     
     if !isMyProfile {
+        // Secret chats keep the combined voice tag: their stored messages are never re-tagged from the server.
+        let isSecretChat = peerId.namespace == Namespaces.Peer.SecretChat
         tags = [
             (.photoOrVideo, .media),
             (.file, .files),
-            (.music, .music),
-            (.voiceOrInstantVideo, .voice),
+            (.music, .music)
+        ]
+        if isSecretChat {
+            tags.append((.voiceOrInstantVideo, .voice))
+        } else {
+            tags.append((.roundVideo, .circles))
+            tags.append((.voice, .voice))
+        }
+        tags.append(contentsOf: [
             (.webPage, .links),
             (.gif, .gifs),
             (.polls, .polls)
-        ]
+        ])
         // The Polls pane (PeerInfoChatPaneNode) always lists the whole chat of the profile's peer
         // (`.peer(id: peerId)`), never a thread, while this availability check reads the listed
         // thread. For a channel's direct-messages thread or a forum topic that would be another

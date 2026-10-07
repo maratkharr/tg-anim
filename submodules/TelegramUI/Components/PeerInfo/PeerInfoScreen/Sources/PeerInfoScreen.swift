@@ -2479,7 +2479,7 @@ final class PeerInfoScreenNode: ViewControllerTracingNode, PeerInfoScreenNodePro
             }
         })
 
-        self.refreshMessageTagStatsDisposable = context.engine.messages.refreshMessageTagStats(peerId: peerId, threadId: chatLocation.threadId, tags: [.video, .photo, .gif, .music, .voiceOrInstantVideo, .webPage, .file, .polls]).startStrict()
+        self.refreshMessageTagStatsDisposable = context.engine.messages.refreshMessageTagStats(peerId: peerId, threadId: chatLocation.threadId, tags: [.video, .photo, .gif, .music, .voiceOrInstantVideo, .voice, .roundVideo, .webPage, .file, .polls]).startStrict()
         
         if peerId.namespace == Namespaces.Peer.CloudChannel {
             self.translationStateDisposable = (chatTranslationState(context: context, peerId: peerId, threadId: nil)
@@ -5932,7 +5932,7 @@ final class PeerInfoScreenNode: ViewControllerTracingNode, PeerInfoScreenNodePro
                             break
                         }
                         switch currentPaneKey {
-                        case .media, .files, .music, .links, .voice:
+                        case .media, .files, .music, .links, .voice, .circles:
                             //navigationButtons.append(PeerInfoHeaderNavigationButtonSpec(key: .select, isForExpandedView: true))
                             break
                         default:

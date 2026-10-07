@@ -530,8 +530,12 @@ private final class PeerInfoPendingPane {
         case .links:
             paneNode = PeerInfoListPaneNode(context: context, updatedPresentationData: updatedPresentationData, chatControllerInteraction: chatControllerInteraction, peerId: chatLocationPeerId, chatLocation: chatLocation, chatLocationContextHolder: chatLocationContextHolder, tagMask: .webPage)
         case .voice:
-            let visualPaneNode = PeerInfoVisualMediaPaneNode(context: context, chatControllerInteraction: chatControllerInteraction, peerId: chatLocationPeerId, chatLocation: chatLocation, chatLocationContextHolder: chatLocationContextHolder, contentType: .voiceAndVideoMessages, captureProtected: captureProtected, initialFocusMessageIndex: nil)
+            // Secret chats keep the combined list: their stored messages never get the finer `.voice` tag re-applied from the server.
+            let voiceContentType: PeerInfoVisualMediaPaneNode.ContentType = chatLocationPeerId.namespace == Namespaces.Peer.SecretChat ? .voiceAndVideoMessages : .voiceMessages
+            let visualPaneNode = PeerInfoVisualMediaPaneNode(context: context, chatControllerInteraction: chatControllerInteraction, peerId: chatLocationPeerId, chatLocation: chatLocation, chatLocationContextHolder: chatLocationContextHolder, contentType: voiceContentType, captureProtected: captureProtected, initialFocusMessageIndex: nil)
             paneNode = visualPaneNode
+        case .circles:
+            paneNode = PeerInfoCirclesPaneNode(context: context, chatControllerInteraction: chatControllerInteraction, peerId: chatLocationPeerId, chatLocation: chatLocation, chatLocationContextHolder: chatLocationContextHolder)
         case .music:
             let visualPaneNode = PeerInfoVisualMediaPaneNode(context: context, chatControllerInteraction: chatControllerInteraction, peerId: chatLocationPeerId, chatLocation: chatLocation, chatLocationContextHolder: chatLocationContextHolder, contentType: .music, captureProtected: captureProtected, initialFocusMessageIndex: nil)
             paneNode = visualPaneNode
@@ -1286,6 +1290,8 @@ final class PeerInfoPaneContainerNode: ASDisplayNode, ASGestureRecognizerDelegat
                     case .voice:
                         content = .title(HorizontalTabsComponent.Tab.Title(text: presentationData.strings.PeerInfo_PaneVoiceAndVideo, entities: [], enableAnimations: false))
                         canReorder = self.peerId.namespace == Namespaces.Peer.CloudChannel
+                    case .circles:
+                        content = .title(HorizontalTabsComponent.Tab.Title(text: presentationData.strings.PeerInfo_PaneCircles, entities: [], enableAnimations: false))
                     case .gifs:
                         content = .title(HorizontalTabsComponent.Tab.Title(text: presentationData.strings.PeerInfo_PaneGifs, entities: [], enableAnimations: false))
                         canReorder = self.peerId.namespace == Namespaces.Peer.CloudChannel

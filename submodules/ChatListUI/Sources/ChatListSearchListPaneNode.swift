@@ -40,6 +40,7 @@ import ButtonComponent
 import BundleIconComponent
 import AnimatedTextComponent
 import TextFormat
+import CirclesGridNode
 
 private func isIncludedCommunityContainer(_ peer: EnginePeer?, filter: ChatListNodePeersFilter) -> Bool {
     if filter.contains(.includeCommunities), case .community = peer {
@@ -1673,6 +1674,8 @@ final class ChatListSearchListPaneNode: ASDisplayNode, ChatListSearchPaneNode {
     private let shimmerNode: ChatListSearchShimmerNode
     private let listNode: ListView?
     private let mediaNode: ChatListSearchMediaNode?
+    private let circlesNode: CirclesGridNode?
+    private let circlesHeaderNode: CirclesMediaHeaderNode?
     private var enqueuedRecentTransitions: [(ChatListSearchContainerRecentTransition, Bool)] = []
     private var enqueuedTransitions: [(ChatListSearchContainerTransition, Bool)] = []
 
@@ -1816,7 +1819,7 @@ final class ChatListSearchListPaneNode: ASDisplayNode, ChatListSearchPaneNode {
         case .music:
             tagMask = .music
         case .voice:
-            tagMask = .voiceOrInstantVideo
+            tagMask = .voice
         case .instantVideo:
             tagMask = .roundVideo
         }
@@ -1861,6 +1864,26 @@ final class ChatListSearchListPaneNode: ASDisplayNode, ChatListSearchPaneNode {
             })
         } else {
             self.mediaNode = nil
+        }
+        
+        var openCircleMessageImpl: ((EngineMessage) -> Void)?
+        if key == .instantVideo {
+            self.circlesNode = CirclesGridNode(context: self.context, openMessage: { message in
+                openCircleMessageImpl?(EngineMessage(message))
+            }, messageContextAction: { message, node, rect, gesture in
+                interaction.messageContextAction(EngineMessage(message), node, rect, gesture, key, nil)
+            }, toggleMessageSelection: { messageId, selected in
+                interaction.toggleMessageSelection(messageId, selected)
+            }, navigateToMessage: { message in
+                guard let peer = message.peers[message.id.peerId] else {
+                    return
+                }
+                interaction.openMessage(EnginePeer(peer), message.threadId, message.id, false)
+            })
+            self.circlesHeaderNode = CirclesMediaHeaderNode(context: self.context)
+        } else {
+            self.circlesNode = nil
+            self.circlesHeaderNode = nil
         }
 
         self.mediaAccessoryPanelContainer = PassthroughContainerNode()
@@ -1937,6 +1960,21 @@ final class ChatListSearchListPaneNode: ASDisplayNode, ChatListSearchPaneNode {
         }
         if let mediaNode = self.mediaNode {
             self.addSubnode(mediaNode)
+        }
+        if let circlesNode = self.circlesNode {
+            self.addSubnode(circlesNode)
+        }
+        if let circlesHeaderNode = self.circlesHeaderNode {
+            self.addSubnode(circlesHeaderNode)
+            circlesHeaderNode.getController = { [weak navigationController] in
+                return navigationController?.topViewController as? ViewController
+            }
+            circlesHeaderNode.stateUpdated = { [weak self] transition in
+                guard let self, let (size, sideInset, topInset, bottomInset, visibleHeight, presentationData) = self.currentParams else {
+                    return
+                }
+                self.update(size: size, sideInset: sideInset, topInset: topInset, bottomInset: bottomInset, visibleHeight: visibleHeight, presentationData: presentationData, synchronous: true, transition: transition)
+            }
         }
 
         self.addSubnode(self.emptyResultsAnimationNode)
@@ -3929,7 +3967,15 @@ final class ChatListSearchListPaneNode: ASDisplayNode, ChatListSearchPaneNode {
                     }
                     strongSelf.mediaNode?.updateHistory(entries: entries, totalCount: 0, updateType: .Initial)
                 } else if strongSelf.tagMask == .roundVideo {
-
+                    var messages: [EngineRawMessage] = []
+                    if let entries = entriesAndFlags {
+                        for entry in entries {
+                            if case let .message(message, _, _, _, _, _, _, _, _, _, _, _, _, _, _) = entry {
+                                messages.append(message._asMessage())
+                            }
+                        }
+                    }
+                    strongSelf.circlesNode?.updateMessages(messages)
                 }
 
                 var peers: [EnginePeer] = []
@@ -4765,8 +4811,14 @@ final class ChatListSearchListPaneNode: ASDisplayNode, ChatListSearchPaneNode {
         self.mediaNode?.loadMore = {
             loadMore()
         }
+        self.circlesNode?.loadMore = {
+            loadMore()
+        }
+        openCircleMessageImpl = { message in
+            let _ = listInteraction.openMessage(message._asMessage(), .default)
+        }
 
-        if [.file, .music, .voiceOrInstantVideo, .voice, .roundVideo].contains(tagMask) || self.key == .downloads {
+        if [.file, .music, .voiceOrInstantVideo, .voice].contains(tagMask) || self.key == .downloads {
             let key = self.key
             self.mediaStatusDisposable = (context.sharedContext.mediaManager.globalMediaPlayerState
             |> mapToSignal { playlistStateAndType -> Signal<(Account, SharedMediaPlayerItemPlaybackState, MediaManagerPlayerType)?, NoError> in
@@ -4909,6 +4961,8 @@ final class ChatListSearchListPaneNode: ASDisplayNode, ChatListSearchPaneNode {
     func scrollToTop() -> Bool {
         if let mediaNode = self.mediaNode, !mediaNode.isHidden {
             return mediaNode.scrollToTop()
+        } else if let circlesNode = self.circlesNode, !circlesNode.isHidden {
+            return circlesNode.scrollToTop()
         } else if !self.recentListNode.isHidden {
             let offset = self.recentListNode.visibleContentOffset()
             switch offset {
@@ -5208,6 +5262,13 @@ final class ChatListSearchListPaneNode: ASDisplayNode, ChatListSearchPaneNode {
         }
 
         transition.updateFrame(node: self.mediaAccessoryPanelContainer, frame: CGRect(origin: CGPoint(), size: CGSize(width: size.width, height: MediaNavigationAccessoryHeaderNode.minimizedHeight)))
+        
+        if let circlesHeaderNode = self.circlesHeaderNode {
+            let headerWidth = size.width - sideInset * 2.0
+            let headerHeight = circlesHeaderNode.update(width: headerWidth, theme: presentationData.theme, strings: presentationData.strings, transition: transition)
+            transition.updateFrame(node: circlesHeaderNode, frame: CGRect(origin: CGPoint(x: sideInset, y: topInset), size: CGSize(width: headerWidth, height: headerHeight)))
+            topPanelHeight += headerHeight
+        }
 
         let topInset: CGFloat = topInset + topPanelHeight
         let overflowInset: CGFloat = 0.0
@@ -5243,6 +5304,11 @@ final class ChatListSearchListPaneNode: ASDisplayNode, ChatListSearchPaneNode {
 
         self.mediaNode?.frame = CGRect(origin: CGPoint(x: 0.0, y: topInset), size: CGSize(width: size.width, height: size.height))
         self.mediaNode?.update(size: size, sideInset: sideInset, bottomInset: bottomInset, visibleHeight: visibleHeight, isScrollingLockedAtTop: false, expandProgress: 1.0, presentationData: self.presentationData, synchronous: true, transition: transition)
+        
+        if let circlesNode = self.circlesNode {
+            transition.updateFrame(node: circlesNode, frame: CGRect(origin: CGPoint(), size: size))
+            circlesNode.update(size: size, topInset: topInset, sideInset: sideInset, bottomInset: bottomInset, visibleHeight: visibleHeight, isScrollingLockedAtTop: false, presentationData: self.presentationData, synchronous: true, transition: transition)
+        }
 
         do {
             let padding: CGFloat = 16.0
@@ -5553,13 +5619,19 @@ final class ChatListSearchListPaneNode: ASDisplayNode, ChatListSearchPaneNode {
             self.listNode?.transaction(deleteIndices: transition.deletions, insertIndicesAndItems: transition.insertions, updateIndicesAndItems: transition.updates, options: options, updateSizeAndInsets: nil, updateOpaqueState: nil, completion: { [weak self] _ in
                 if let strongSelf = self {
                     let searchOptions = strongSelf.searchOptionsValue
-                    strongSelf.listNode?.isHidden = strongSelf.tagMask == .photoOrVideo && (strongSelf.searchQueryValue ?? "").isEmpty
-                    strongSelf.mediaNode?.isHidden = !(strongSelf.listNode?.isHidden ?? true)
+                    let showsGrid = (strongSelf.tagMask == .photoOrVideo || strongSelf.tagMask == .roundVideo) && (strongSelf.searchQueryValue ?? "").isEmpty
+                    strongSelf.listNode?.isHidden = showsGrid
+                    strongSelf.mediaNode?.isHidden = !showsGrid
+                    strongSelf.circlesNode?.isHidden = !showsGrid
 
                     let displayingResults = transition.displayingResults
                     if !displayingResults {
                         strongSelf.listNode?.isHidden = true
                         strongSelf.mediaNode?.isHidden = true
+                        strongSelf.circlesNode?.isHidden = true
+                    }
+                    if let circlesNode = strongSelf.circlesNode {
+                        circlesNode.updateIsVisible(!circlesNode.isHidden)
                     }
 
                     let emptyResults = displayingResults && transition.isEmpty
@@ -5628,8 +5700,10 @@ final class ChatListSearchListPaneNode: ASDisplayNode, ChatListSearchPaneNode {
                                         emptyResultsText = strongSelf.presentationData.strings.ChatList_Search_NoResultsFitlerFiles
                                     } else if strongSelf.tagMask == .music {
                                         emptyResultsText = strongSelf.presentationData.strings.ChatList_Search_NoResultsFitlerMusic
-                                    } else if strongSelf.tagMask == .voiceOrInstantVideo {
+                                    } else if strongSelf.tagMask == .voiceOrInstantVideo || strongSelf.tagMask == .voice {
                                         emptyResultsText = strongSelf.presentationData.strings.ChatList_Search_NoResultsFitlerVoice
+                                    } else if strongSelf.tagMask == .roundVideo {
+                                        emptyResultsText = strongSelf.presentationData.strings.ChatList_Search_NoResultsFitlerCircles
                                     } else {
                                         emptyResultsText = strongSelf.presentationData.strings.ChatList_Search_NoResultsDescription
                                     }
@@ -6027,7 +6101,7 @@ public final class ChatListSearchShimmerNode: ASDisplayNode {
                             displayAsTopicList: false,
                             tags: []
                         )), editing: false, hasActiveRevealControls: false, selected: false, header: nil, enabledContextActions: nil, hiddenOffset: false, interaction: interaction)
-                    case .media:
+                    case .media, .instantVideo:
                         return nil
                     case .links:
                         var media: [EngineMedia] = []
@@ -6122,7 +6196,7 @@ public final class ChatListSearchShimmerNode: ASDisplayNode {
                         )
 
                         return ListMessageItem(presentationData: ChatPresentationData(presentationData: presentationData), context: context, chatLocation: .peer(id: peer1.id), interaction: ListMessageItemInteraction.default, message: message._asMessage(), selection: hasSelection ? .selectable(selected: false, num: nil) : .none, displayHeader: false, customHeader: nil, hintIsLink: false, isGlobalSearchResult: true)
-                    case .voice, .instantVideo:
+                    case .voice:
                         var media: [EngineMedia] = []
                         media.append(.file(TelegramMediaFile(fileId: EngineMedia.Id(namespace: 0, id: 0), partialReference: nil, resource: LocalFileMediaResource(fileId: 0), previewRepresentations: [], videoThumbnails: [], immediateThumbnailData: nil, mimeType: "audio/ogg", size: 0, attributes: [.Audio(isVoice: true, duration: 0, title: nil, performer: nil, waveform: Data())], alternativeRepresentations: [])))
                         let message = EngineMessage(
@@ -6170,7 +6244,27 @@ public final class ChatListSearchShimmerNode: ASDisplayNode {
                 context.setFillColor(presentationData.theme.chatList.backgroundColor.cgColor)
                 context.fill(CGRect(origin: CGPoint(), size: size))
 
-                if key == .media {
+                if key == .instantVideo {
+                    var currentY: CGFloat = 0.0
+                    var rowIndex: Int = 0
+
+                    let edgeInset: CGFloat = 8.0
+                    let itemSpacing: CGFloat = 6.0
+                    let itemsInRow = max(3, min(6, Int(size.width / 140.0)))
+                    let itemSize: CGFloat = floor((size.width - edgeInset * 2.0 - itemSpacing * CGFloat(itemsInRow - 1)) / CGFloat(itemsInRow))
+
+                    context.setBlendMode(.copy)
+                    context.setFillColor(UIColor.clear.cgColor)
+
+                    while currentY < size.height {
+                        for i in 0 ..< itemsInRow {
+                            let itemOrigin = CGPoint(x: edgeInset + CGFloat(i) * (itemSize + itemSpacing), y: edgeInset + CGFloat(rowIndex) * (itemSize + itemSpacing))
+                            context.fillEllipse(in: CGRect(origin: itemOrigin, size: CGSize(width: itemSize, height: itemSize)))
+                        }
+                        currentY += itemSize + itemSpacing
+                        rowIndex += 1
+                    }
+                } else if key == .media {
                     var currentY: CGFloat = 0.0
                     var rowIndex: Int = 0
 

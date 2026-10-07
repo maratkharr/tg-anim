@@ -1085,6 +1085,8 @@ private func tagMaskForType(_ type: PeerInfoVisualMediaPaneNode.ContentType) -> 
         return .file
     case .voiceAndVideoMessages:
         return .voiceOrInstantVideo
+    case .voiceMessages:
+        return .voice
     case .music:
         return .music
     }
@@ -1102,6 +1104,7 @@ public final class PeerInfoVisualMediaPaneNode: ASDisplayNode, PeerInfoPaneNode,
         case gifs
         case files
         case voiceAndVideoMessages
+        case voiceMessages
         case music
     }
 
@@ -1212,11 +1215,13 @@ public final class PeerInfoVisualMediaPaneNode: ASDisplayNode, PeerInfoPaneNode,
         let roundListThumbnails: Bool
         if case .voiceAndVideoMessages = contentType {
             roundListThumbnails = true
+        } else if case .voiceMessages = contentType {
+            roundListThumbnails = true
         } else {
             roundListThumbnails = false
         }
         switch contentType {
-        case .files, .voiceAndVideoMessages, .music:
+        case .files, .voiceAndVideoMessages, .voiceMessages, .music:
             useListItems = true
         default:
             useListItems = false
@@ -1598,6 +1603,8 @@ public final class PeerInfoVisualMediaPaneNode: ASDisplayNode, PeerInfoPaneNode,
                 summaries.append(.file)
             case .voiceAndVideoMessages:
                 summaries.append(.voiceOrInstantVideo)
+            case .voiceMessages:
+                summaries.append(.voice)
             case .music:
                 summaries.append(.music)
             }
@@ -1679,6 +1686,14 @@ public final class PeerInfoVisualMediaPaneNode: ASDisplayNode, PeerInfoPaneNode,
                 } else {
                     return nil
                 }
+            case .voiceMessages:
+                let itemCount: Int32 = dict[.voice] ?? 0
+
+                if itemCount != 0 {
+                    return PeerInfoStatusData(text: presentationData.strings.SharedMedia_VoiceMessageCount(Int32(itemCount)), isActivity: false, key: .voice)
+                } else {
+                    return nil
+                }
             case .music:
                 let itemCount: Int32 = dict[.music] ?? 0
 
@@ -1705,7 +1720,7 @@ public final class PeerInfoVisualMediaPaneNode: ASDisplayNode, PeerInfoPaneNode,
                 }
                 var isList = false
                 switch strongSelf.contentType {
-                case .files, .music, .voiceAndVideoMessages:
+                case .files, .music, .voiceAndVideoMessages, .voiceMessages:
                     isList = true
                 default:
                     break
@@ -2145,14 +2160,14 @@ public final class PeerInfoVisualMediaPaneNode: ASDisplayNode, PeerInfoPaneNode,
     
     public func updateSelectedMessages(animated: Bool) {
         switch self.contentType {
-        case .files, .music, .voiceAndVideoMessages:
+        case .files, .music, .voiceAndVideoMessages, .voiceMessages:
             self.itemGrid.forEachVisibleItem { item in
                 guard let itemView = item.view as? ItemView, let (size, topInset, sideInset, bottomInset, _, _, _, _, _, _) = self.currentParams else {
                     return
                 }
                 var isList = false
                 switch self.contentType {
-                case .files, .music, .voiceAndVideoMessages:
+                case .files, .music, .voiceAndVideoMessages, .voiceMessages:
                     isList = true
                 default:
                     break
@@ -2224,7 +2239,7 @@ public final class PeerInfoVisualMediaPaneNode: ASDisplayNode, PeerInfoPaneNode,
             let fixedItemHeight: CGFloat?
             var isList = false
             switch self.contentType {
-            case .files, .music, .voiceAndVideoMessages:
+            case .files, .music, .voiceAndVideoMessages, .voiceMessages:
                 let fakeFile = TelegramMediaFile(
                     fileId: MediaId(namespace: 0, id: 1),
                     partialReference: nil,

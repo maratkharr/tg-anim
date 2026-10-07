@@ -62,6 +62,7 @@ swift_library(
         "//submodules/ChatInterfaceState:ChatInterfaceState",
         "//submodules/ShareController:ShareController",
         "//submodules/GridMessageSelectionNode:GridMessageSelectionNode",
+        "//submodules/TelegramUI/Components/CirclesGridNode",
         "//submodules/ChatListFilterSettingsHeaderItem:ChatListFilterSettingsHeaderItem",
         "//submodules/TelegramStringFormatting:TelegramStringFormatting",
         "//submodules/TelegramCallsUI:TelegramCallsUI",

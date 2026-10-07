@@ -16,6 +16,7 @@ public enum PeerInfoPaneKey: Int32 {
     case files
     case music
     case voice
+    case circles
     case links
     case gifs
     case polls

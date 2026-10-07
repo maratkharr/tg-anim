@@ -114,7 +114,7 @@ func defaultAvailableSearchPanes(isForum: Bool, hasDownloads: Bool, hasPublicPos
     if !isForum {
         result.append(.globalPosts)
     }
-    result.append(contentsOf: [.media, .downloads, .links, .files, .music, .voice])
+    result.append(contentsOf: [.media, .downloads, .links, .files, .music, .instantVideo, .voice])
         
     if !hasDownloads {
         result.removeAll(where: { $0 == .downloads })
