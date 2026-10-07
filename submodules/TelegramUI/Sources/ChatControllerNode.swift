@@ -40,6 +40,9 @@ import ChatMessageSelectionNode
 import ManagedDiceAnimationNode
 import ChatMessageTransitionNode
 import TextFieldComponent
+// Both TextFieldComponent and ChatEntityKeyboardInputNode export an `EmptyInputView`; the scoped import
+// picks one so the bare name is unambiguous (Swift 6.4 rejects the ambiguity).
+import class TextFieldComponent.EmptyInputView
 import ChatLoadingNode
 import ChatRecentActionsController
 import UIKitRuntimeUtils
